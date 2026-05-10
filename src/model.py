@@ -1,3 +1,8 @@
+"""
+Model rynkowy typu ABM (Kirman 1993).
+Dodano funkcje wyzwalania euforii (optimism).
+"""
+
 from mesa import Model
 from mesa.datacollection import DataCollector
 from agents import Investor
@@ -24,10 +29,20 @@ class MarketModel(Model):
         self.datacollector.collect(self)
 
     def trigger_shock(self):
+        """Wymusza panikę (stan 0) u 40% populacji."""
         shock_size = int(self.population_size * 0.4)
         chosen_agents = self.random.sample(list(self.agents), shock_size)
         for agent in chosen_agents:
             agent.state = 0
+        self.update_price()
+        self.datacollector.collect(self)
+
+    def trigger_optimism(self):
+        """Wymusza euforię (stan 1) u 40% populacji."""
+        surge_size = int(self.population_size * 0.4)
+        chosen_agents = self.random.sample(list(self.agents), surge_size)
+        for agent in chosen_agents:
+            agent.state = 1
         self.update_price()
         self.datacollector.collect(self)
 
