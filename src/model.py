@@ -1,6 +1,6 @@
 """
-Model rynkowy typu ABM (Kirman 1993).
-Zabezpieczony przed race condition (konfliktem wątków).
+Market ABM model (Kirman 1993).
+Protected against race condition (thread conflict).
 """
 
 from mesa import Model
@@ -21,34 +21,34 @@ class MarketModel(Model):
 
         self.datacollector = DataCollector(
             model_reporters={
-                "Cena": lambda m: m.price,
-                "Optymiści": lambda m: sum(1 for a in m.agents if a.state == 1),
-                "Pesymiści": lambda m: sum(1 for a in m.agents if a.state == 0),
+                "Price": lambda m: m.price,
+                "Optimists": lambda m: sum(1 for a in m.agents if a.state == 1),
+                "Pessimists": lambda m: sum(1 for a in m.agents if a.state == 0),
             }
         )
-        # Inicjalne zebranie danych
+        # Initial data collection
         self.datacollector.collect(self)
 
     def trigger_shock(self):
-        """Wymusza panikę (stan 0) u 40% populacji."""
+        """Forces panic (state 0) in 40% of the population."""
         shock_size = int(self.population_size * 0.4)
         chosen_agents = self.random.sample(list(self.agents), shock_size)
         for agent in chosen_agents:
             agent.state = 0
         self.update_price()
-        # USUNIĘTO: self.datacollector.collect(self) - zapobiega race condition
+        # REMOVED: self.datacollector.collect(self) - prevents race condition
 
     def trigger_optimism(self):
-        """Wymusza euforię (stan 1) u 40% populacji."""
+        """Forces euphoria (state 1) in 40% of the population."""
         surge_size = int(self.population_size * 0.4)
         chosen_agents = self.random.sample(list(self.agents), surge_size)
         for agent in chosen_agents:
             agent.state = 1
         self.update_price()
-        # USUNIĘTO: self.datacollector.collect(self) - zapobiega race condition
+        # REMOVED: self.datacollector.collect(self) - prevents race condition
 
     def update_price(self):
-        """Aktualizacja ceny na podstawie nastrojów."""
+        """Updates the price based on sentiment."""
         n_opt = sum(1 for a in self.agents if a.state == 1)
         n_pes = self.population_size - n_opt
         self.price += self.alpha * (n_opt - n_pes)
@@ -56,7 +56,7 @@ class MarketModel(Model):
             self.price = 0.0
 
     def step(self):
-        """Krok symulacji - to tutaj bezpiecznie zbieramy dane."""
+        """Simulation step - safe data collection here."""
         self.agents.shuffle_do("step")
         self.update_price()
         self.datacollector.collect(self)

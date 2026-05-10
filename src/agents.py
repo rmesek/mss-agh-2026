@@ -1,30 +1,30 @@
 """
-Agent inwestora dla modelu Kirmana (1993).
-Logika: Innowacja (epsilon) i Naśladownictwo (1 - delta).
+Investor agent for the Kirman (1993) model.
+Logic: Innovation (epsilon) and Imitation (1 - delta).
 """
 
 from mesa import Agent
 
 class Investor(Agent):
-    """Agent rynkowy podejmujący decyzje w oparciu o herding."""
+    """Market agent making decisions based on herding."""
 
     def __init__(self, model):
         super().__init__(model)
-        # Początkowy stan: 1 (Optymista), 0 (Pesymista)
+        # Initial state: 1 (Optimist), 0 (Pessimist)
         self.state = self.random.choice([0, 1])
 
     def step(self):
-        """Krok decyzyjny agenta."""
+        """Agent's decision step."""
         epsilon = self.model.epsilon
         delta = self.model.delta
 
         r = self.random.random()
 
-        # 1. Innowacja (niezależna zmiana zdania z prawdopodobieństwem ε)
+        # 1. Innovation (independent change of mind with probability ε)
         if r < epsilon:
             self.state = 1 - self.state
         
-        # 2. Naśladownictwo (pobranie stanu od innego agenta z prawdopodobieństwem 1 - δ)
+        # 2. Imitation (fetching state from another agent with probability 1 - δ)
         elif r < epsilon + (1 - delta):
             random_agent = self.random.choice(list(self.model.agents))
             self.state = random_agent.state
