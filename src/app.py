@@ -31,10 +31,13 @@ def ControlPanelExtension(model):
             style={"width": "100%", "margin-bottom": "20px"}
         )
         
-        solara.Markdown("---")
         eta = model.epsilon / model.delta if model.delta != 0 else 0
-        solara.Markdown(f"**Theoretical η (ε/δ):** {eta:.3f}")
-        solara.Markdown("> η < 1: U-shaped distribution (bimodal)\n> η > 1: Bell-shaped distribution")
+        solara.Markdown(
+            "---\n\n"
+            f"**Theoretical η (ε/δ):** `{eta:.3f}`\n\n"
+            "- **η < 1:** U-shaped distribution (bimodal)\n"
+            "- **η > 1:** Bell-shaped distribution"
+        )
 
 # 3. Price Plot with axis descriptions
 def PricePlot(model):
@@ -93,14 +96,14 @@ def DynamicDistributionPlot(model):
             edgecolor="black"
         )
         
-        # Try to add a trend line (KDE)
-        try:
-            from scipy.stats import gaussian_kde
-            kde = gaussian_kde(fractions)
-            x_range = np.linspace(0, 1, 100)
-            ax.plot(x_range, kde(x_range), color="black", linewidth=2)
-        except:
-            pass
+        # # Try to add a trend line (KDE)
+        # try:
+        #     from scipy.stats import gaussian_kde
+        #     kde = gaussian_kde(fractions)
+        #     x_range = np.linspace(0, 1, 100)
+        #     ax.plot(x_range, kde(x_range), color="black", linewidth=2)
+        # except:
+        #     pass
 
     ax.set_title("Empirical State Distribution (PDF)", fontweight='bold')
     ax.set_xlabel("Fraction of Optimists in the system [0-1]")
