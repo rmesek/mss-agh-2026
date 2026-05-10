@@ -1,6 +1,6 @@
 """
 Model rynkowy typu ABM (Kirman 1993).
-Dodano funkcje wyzwalania euforii (optimism).
+Zabezpieczony przed race condition (konfliktem wątków).
 """
 
 from mesa import Model
@@ -26,6 +26,7 @@ class MarketModel(Model):
                 "Pesymiści": lambda m: sum(1 for a in m.agents if a.state == 0),
             }
         )
+        # Inicjalne zebranie danych
         self.datacollector.collect(self)
 
     def trigger_shock(self):
@@ -35,7 +36,7 @@ class MarketModel(Model):
         for agent in chosen_agents:
             agent.state = 0
         self.update_price()
-        self.datacollector.collect(self)
+        # USUNIĘTO: self.datacollector.collect(self) - zapobiega race condition
 
     def trigger_optimism(self):
         """Wymusza euforię (stan 1) u 40% populacji."""
@@ -44,15 +45,18 @@ class MarketModel(Model):
         for agent in chosen_agents:
             agent.state = 1
         self.update_price()
-        self.datacollector.collect(self)
+        # USUNIĘTO: self.datacollector.collect(self) - zapobiega race condition
 
     def update_price(self):
+        """Aktualizacja ceny na podstawie nastrojów."""
         n_opt = sum(1 for a in self.agents if a.state == 1)
         n_pes = self.population_size - n_opt
         self.price += self.alpha * (n_opt - n_pes)
-        if self.price < 0: self.price = 0.0
+        if self.price < 0: 
+            self.price = 0.0
 
     def step(self):
+        """Krok symulacji - to tutaj bezpiecznie zbieramy dane."""
         self.agents.shuffle_do("step")
         self.update_price()
         self.datacollector.collect(self)
