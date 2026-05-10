@@ -1,6 +1,6 @@
 """
 Agent inwestora dla modelu Kirmana (1993).
-Logika: Innowacja (epsilon) i Naśladownictwo (delta).
+Logika: Innowacja (epsilon) i Naśladownictwo (1 - delta).
 """
 
 from mesa import Agent
@@ -20,12 +20,11 @@ class Investor(Agent):
 
         r = self.random.random()
 
-        # 1. Innowacja (niezależna zmiana zdania)
+        # 1. Innowacja (niezależna zmiana zdania z prawdopodobieństwem ε)
         if r < epsilon:
             self.state = 1 - self.state
         
-        # 2. Naśladownictwo (pobranie stanu od innego agenta)
-        elif r < epsilon + delta:
-            # Model Kirmana zakłada interakcje globalne
+        # 2. Naśladownictwo (pobranie stanu od innego agenta z prawdopodobieństwem 1 - δ)
+        elif r < epsilon + (1 - delta):
             random_agent = self.random.choice(list(self.model.agents))
             self.state = random_agent.state

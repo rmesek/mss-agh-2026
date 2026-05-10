@@ -1,102 +1,96 @@
-"""
-Interfejs Solara z ulepszonymi, stabilnymi wykresami Matplotlib.
-Oba wykresy mają teraz spójny wygląd i stałe ramy.
-"""
-
 import solara
 import matplotlib.figure as figure
+import numpy as np
 from model import MarketModel
 from mesa.visualization import Slider, SolaraViz
 
-# 1. Konfiguracja parametrów modelu
+# 1. Konfiguracja parametrów zgodnie z wartościami z artykułu (N=100)
 model_params = {
-    "population_size": Slider("Liczba Inwestorów (N)", 200, 50, 1000, 50),
-    "epsilon": Slider("Innowacja (ε)", 0.01, 0.001, 0.1, 0.001),
-    "delta": Slider("Naśladownictwo (δ)", 0.05, 0.01, 0.5, 0.01),
+    "population_size": Slider("Liczba Inwestorów (N)", 100, 10, 500, 10),
+    "epsilon": Slider("Innowacja (ε)", 0.01, 0.001, 0.2, 0.001),
+    "delta": Slider("Naśladownictwo (δ)", 0.02, 0.001, 0.5, 0.001),
     "alpha": Slider("Wrażliwość rynku (α)", 0.5, 0.1, 5.0, 0.1),
 }
 
-# 2. Panel boczny (Sidebar) z przyciskiem Shock
 def ControlPanelExtension(model):
     with solara.Sidebar():
-        solara.Markdown("### Zdarzenia rynkowe")
-        solara.Button(
-            label="WYWOŁAJ KRACH (SHOCK)", 
-            on_click=model.trigger_shock, 
-            color="error",
-            style={"width": "100%", "margin-top": "10px"}
-        )
-        solara.Markdown("Kliknięcie wymusza panikę u 40% populacji, co powinno być widoczne na obu wykresach.")
+        solara.Markdown("### Sterowanie")
+        solara.Button(label="WYWOŁAJ KRACH", on_click=model.trigger_shock, color="error", style={"width": "100%"})
+        solara.Markdown(f"**Aktualne η (ε/δ):** {model.epsilon/model.delta:.3f}")
 
-# 3. Ulepszony wykres Ceny (stabilny rozmiar)
 def PricePlot(model):
-    """Niestandardowy wykres ceny rynkowej."""
-    fig = figure.Figure(figsize=(6, 4))
+    fig = figure.Figure(figsize=(6, 3))
     ax = fig.subplots()
     df = model.datacollector.get_model_vars_dataframe()
-    
     if not df.empty:
-        ax.plot(df.index, df["Cena"], color="tab:blue", linewidth=2)
-        ax.set_title("Ewolucja Ceny Rynkowej", fontsize=12, fontweight='bold')
-        ax.set_xlabel("Krok symulacji")
-        ax.set_ylabel("Cena ($)")
-        ax.grid(True, linestyle='--', alpha=0.6)
-        
-        # Stabilizacja osi X
-        ax.set_xlim(0, max(1, len(df) - 1))
-        
-        # Opcjonalnie: minimalny zakres osi Y, żeby wykres nie "pływał" przy małych zmianach
-        current_price = model.price
-        ax.set_ylim(min(900, current_price * 0.8), max(1100, current_price * 1.2))
-
+        ax.plot(df.index, df["Cena"], color="tab:blue")
+        ax.set_title("Cena Rynkowa")
+        ax.set_xlim(0, max(1, len(df)-1))
     fig.tight_layout()
     return solara.FigureMatplotlib(fig)
 
-# 4. Wykres proporcji sentymentu (Stacked Area)
 def SentimentStackedPlot(model):
-    """Wykres proporcji: Optymiści vs Pesymiści (stała wysokość = N)."""
+    fig = figure.Figure(figsize=(6, 3))
+    ax = fig.subplots()
+    df = model.datacollector.get_model_vars_dataframe()
+    if not df.empty:
+        ax.stackplot(df.index, df["Optymiści"], df["Pesymiści"], colors=["#2ca02c", "#d62728"], alpha=0.8)
+        ax.set_title("Dynamika Sentymentu (Populacja)")
+        ax.set_ylim(0, model.population_size)
+        ax.set_xlim(0, max(1, len(df)-1))
+    fig.tight_layout()
+    return solara.FigureMatplotlib(fig)
+
+# 2. NOWY: Dynamiczny wykres rozkładu (obliczany z historii kroków)
+def DynamicDistributionPlot(model):
+    """Oblicza empiryczny rozkład stanów systemu na podstawie historii kroków."""
     fig = figure.Figure(figsize=(6, 4))
     ax = fig.subplots()
     df = model.datacollector.get_model_vars_dataframe()
     
-    if not df.empty:
-        x = df.index
-        y_opt = df["Optymiści"]
-        y_pes = df["Pesymiści"]
+    if len(df) > 5: # Potrzebujemy kilku kroków, aby histogram miał sens
+        # Pobieramy frakcję optymistów z każdego kroku historii
+        fractions = df["Optymiści"] / model.population_size
         
-        ax.stackplot(
-            x, y_opt, y_pes, 
-            labels=["Optymiści", "Pesymiści"], 
-            colors=["#2ca02c", "#d62728"], # Wyraźna zieleń i czerwień
-            alpha=0.8
+        # Tworzymy histogram (gęstość)
+        counts, bins, patches = ax.hist(
+            fractions, 
+            bins=np.linspace(0, 1, 25), 
+            density=True, 
+            color="purple", 
+            alpha=0.6, 
+            edgecolor="black"
         )
         
-        ax.set_title("Struktura Sentymentu Populacji", fontsize=12, fontweight='bold')
-        ax.set_xlabel("Krok symulacji")
-        ax.set_ylabel("Liczba Agentów")
-        
-        # Stała wysokość odpowiadająca rozmiarowi populacji
-        ax.set_ylim(0, model.population_size)
-        ax.set_xlim(0, max(1, len(df) - 1))
-        ax.legend(loc="upper left", frameon=True, facecolor='white', framealpha=0.9)
-        ax.grid(axis='y', linestyle='--', alpha=0.3)
+        # Opcjonalnie: wygładzona linia trendu (KDE)
+        try:
+            from scipy.stats import gaussian_kde
+            kde = gaussian_kde(fractions)
+            x_range = np.linspace(0, 1, 100)
+            ax.plot(x_range, kde(x_range), color="black", linewidth=2)
+        except:
+            pass
 
+    ax.set_title("Empiryczny Rozkład Stanów (Dynamiczny)")
+    ax.set_xlabel("Frakcja Optymistów")
+    ax.set_ylabel("Częstotliwość występowania")
+    ax.set_xlim(0, 1)
+    ax.grid(axis='y', alpha=0.3)
+    
     fig.tight_layout()
     return solara.FigureMatplotlib(fig)
 
-# 5. Inicjalizacja instancji modelu
-model_inst = MarketModel()
+model_inst = MarketModel(epsilon=0.005, delta=0.01) # Startowe wartości dla przypadku 'a'
 
-# 6. Konfiguracja Dashboardu Solara
 page = SolaraViz(
     model_inst,
     components=[
-        PricePlot,              # Ulepszony wykres ceny
-        SentimentStackedPlot,   # Wykres proporcji
-        ControlPanelExtension   # Przycisk w panelu bocznym
+        PricePlot,
+        SentimentStackedPlot,
+        DynamicDistributionPlot, # Wykres obliczany na żywo
+        ControlPanelExtension
     ],
     model_params=model_params,
-    name="Symulacja Systemu Kirmana (Model ABM)",
+    name="Model Kirmana - Analiza Empiryczna",
 )
-
-page  # noqa
+page
