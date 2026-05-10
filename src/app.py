@@ -1,8 +1,26 @@
 import solara
 import matplotlib.figure as figure
 import numpy as np
+import pandas as pd
 from model import MarketModel
 from mesa.visualization import Slider, SolaraViz
+
+def get_safe_df(datacollector) -> pd.DataFrame:
+    """
+    Safely builds a DataFrame from Mesa's datacollector, preventing race 
+    conditions by truncating all columns to the exact same length.
+    """
+    model_vars = datacollector.model_vars
+    
+    # Early exit if there is no data to prevent ValueError in min()
+    if not model_vars or not any(model_vars.values()):
+        return pd.DataFrame()
+    
+    # 1. Find the shortest list (O(N) where N is number of variables)
+    min_len = min(len(v) for v in model_vars.values())
+    
+    # 2. Slice lists and construct DataFrame in one pass
+    return pd.DataFrame({k: v[:min_len] for k, v in model_vars.items()})
 
 # 1. Parameter configuration (N=100 for compatibility with Figure I)
 model_params = {
@@ -43,7 +61,7 @@ def ControlPanelExtension(model):
 def PricePlot(model):
     fig = figure.Figure(figsize=(6, 3.5))
     ax = fig.subplots()
-    df = model.datacollector.get_model_vars_dataframe()
+    df = get_safe_df(model.datacollector)
     
     if not df.empty:
         ax.plot(df.index, df["Price"], color="tab:blue", linewidth=1.5)
@@ -60,7 +78,7 @@ def PricePlot(model):
 def SentimentStackedPlot(model):
     fig = figure.Figure(figsize=(6, 3.5))
     ax = fig.subplots()
-    df = model.datacollector.get_model_vars_dataframe()
+    df = get_safe_df(model.datacollector)
     
     if not df.empty:
         ax.stackplot(
@@ -83,7 +101,7 @@ def SentimentStackedPlot(model):
 def DynamicDistributionPlot(model):
     fig = figure.Figure(figsize=(6, 4))
     ax = fig.subplots()
-    df = model.datacollector.get_model_vars_dataframe()
+    df = get_safe_df(model.datacollector)
     
     if len(df) > 5:
         fractions = df["Optimists"] / model.population_size
@@ -96,15 +114,6 @@ def DynamicDistributionPlot(model):
             edgecolor="black"
         )
         
-        # # Try to add a trend line (KDE)
-        # try:
-        #     from scipy.stats import gaussian_kde
-        #     kde = gaussian_kde(fractions)
-        #     x_range = np.linspace(0, 1, 100)
-        #     ax.plot(x_range, kde(x_range), color="black", linewidth=2)
-        # except:
-        #     pass
-
     ax.set_title("Empirical State Distribution (PDF)", fontweight='bold')
     ax.set_xlabel("Fraction of Optimists in the system [0-1]")
     ax.set_ylabel("Occurrence Density")
