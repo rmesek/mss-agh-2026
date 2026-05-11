@@ -2,8 +2,11 @@ from mesa import Model
 from mesa.datacollection import DataCollector
 from agents import Investor
 
+
 class MarketModel(Model):
-    def __init__(self, population_size=100, epsilon=0.01, delta=0.02, alpha=0.5, seed=None):
+    def __init__(
+        self, population_size=100, epsilon=0.01, delta=0.02, alpha=0.5, seed=None
+    ):
         super().__init__(seed=seed)
         self.population_size = population_size
         self.epsilon = epsilon
@@ -45,7 +48,7 @@ class MarketModel(Model):
         n_opt = sum(1 for a in self.agents if a.state == 1)
         n_pes = self.population_size - n_opt
         self.price += self.alpha * (n_opt - n_pes)
-        if self.price < 0: 
+        if self.price < 0:
             self.price = 0.0
 
     def step(self):

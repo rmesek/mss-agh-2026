@@ -1,5 +1,6 @@
 from mesa import Agent
 
+
 class Investor(Agent):
     """Market agent making decisions based on herding."""
 
@@ -18,7 +19,7 @@ class Investor(Agent):
         # 1. Innovation (independent change of mind with probability ε)
         if r < epsilon:
             self.state = 1 - self.state
-        
+
         # 2. Imitation (fetching state from another agent with probability 1 - δ)
         elif r < epsilon + (1 - delta):
             random_agent = self.random.choice(list(self.model.agents))
