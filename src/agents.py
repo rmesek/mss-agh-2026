@@ -1,8 +1,3 @@
-"""
-Investor agent for the Kirman (1993) model.
-Logic: Innovation (epsilon) and Imitation (1 - delta).
-"""
-
 from mesa import Agent
 
 class Investor(Agent):

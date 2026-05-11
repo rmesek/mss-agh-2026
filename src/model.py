@@ -1,8 +1,3 @@
-"""
-Market ABM model (Kirman 1993).
-Protected against race condition (thread conflict).
-"""
-
 from mesa import Model
 from mesa.datacollection import DataCollector
 from agents import Investor

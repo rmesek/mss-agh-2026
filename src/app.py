@@ -25,8 +25,8 @@ def get_safe_df(datacollector) -> pd.DataFrame:
 # 1. Parameter configuration (N=100 for compatibility with Figure I)
 model_params = {
     "population_size": Slider("Number of Investors (N)", 100, 10, 500, 10),
-    "epsilon": Slider("Innovation (ε)", 0.005, 0.001, 0.2, 0.001),
-    "delta": Slider("Imitation (δ)", 0.01, 0.001, 0.5, 0.001),
+    "epsilon": Slider("Innovation (ε)", 0.005, 0.0, 1.0, 0.005),
+    "delta": Slider("Imitation (δ)", 0.01, 0.0, 1.0, 0.01),
     "alpha": Slider("Market sensitivity (α)", 0.5, 0.1, 5.0, 0.1),
 }
 
