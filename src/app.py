@@ -12,17 +12,14 @@ def get_safe_df(datacollector) -> pd.DataFrame:
     """
     model_vars = datacollector.model_vars
     
-    # Early exit if there is no data to prevent ValueError in min()
     if not model_vars or not any(model_vars.values()):
         return pd.DataFrame()
     
-    # 1. Find the shortest list (O(N) where N is number of variables)
     min_len = min(len(v) for v in model_vars.values())
     
-    # 2. Slice lists and construct DataFrame in one pass
     return pd.DataFrame({k: v[:min_len] for k, v in model_vars.items()})
 
-# 1. Parameter configuration (N=100 for compatibility with Figure I)
+# 1. Parameter configuration
 model_params = {
     "population_size": Slider("Number of Investors (N)", 100, 10, 500, 10),
     "epsilon": Slider("Innovation (ε)", 0.005, 0.0, 1.0, 0.005),

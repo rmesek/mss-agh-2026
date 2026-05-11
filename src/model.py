@@ -31,7 +31,6 @@ class MarketModel(Model):
         for agent in chosen_agents:
             agent.state = 0
         self.update_price()
-        # REMOVED: self.datacollector.collect(self) - prevents race condition
 
     def trigger_optimism(self):
         """Forces euphoria (state 1) in 40% of the population."""
@@ -40,7 +39,6 @@ class MarketModel(Model):
         for agent in chosen_agents:
             agent.state = 1
         self.update_price()
-        # REMOVED: self.datacollector.collect(self) - prevents race condition
 
     def update_price(self):
         """Updates the price based on sentiment."""
@@ -51,7 +49,7 @@ class MarketModel(Model):
             self.price = 0.0
 
     def step(self):
-        """Simulation step - safe data collection here."""
+        """Simulation step."""
         self.agents.shuffle_do("step")
         self.update_price()
         self.datacollector.collect(self)
