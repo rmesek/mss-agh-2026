@@ -6,6 +6,4 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "mesa[rec]>=3.5.1",
-    "notebook>=7.5.6",
-    "seaborn>=0.13.2",
 ]
