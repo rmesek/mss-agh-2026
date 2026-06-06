@@ -6,4 +6,5 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "mesa[rec]>=3.5.1",
+    "solara>=1.57.4",
 ]
